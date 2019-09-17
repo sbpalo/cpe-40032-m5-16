@@ -22,6 +22,7 @@ function LevelMaker.generate(width, height)
     local tileset = math.random(20)
     local topperset = math.random(20)
 
+    local lockSpawned = false
     -- insert blank tables into tiles for later access
     for x = 1, height do
         table.insert(tiles, {})
@@ -38,7 +39,8 @@ function LevelMaker.generate(width, height)
         end
 
         -- chance to just be emptiness
-        if math.random(7) == 1 then
+        -- never spawn on an empty space
+        if math.random(7) == 1 and x > 1 then
             for y = 7, height do
                 table.insert(tiles[y],
                     Tile(x, y, tileID, nil, tileset, topperset))
@@ -162,5 +164,59 @@ function LevelMaker.generate(width, height)
     local map = TileMap(width, height)
     map.tiles = tiles
     
+    spawnLock (objects)
     return GameLevel(entities, objects, map)
 end
+
+function spawnLock (objects)
+    local rndBlock = math.random(#objects)
+
+    while objects [rndBlock].texture ~= 'jump-blocks' do
+        rndBlock = math.random(#objects)
+    end
+
+    local block = GameObject {
+        texture = 'keys_and_locks',
+        x = objects[rndBlock].x, 
+        y = objects[rndBlock].y,
+        width = 16,
+        height = 16,
+
+        -- make it random variant
+        frame = LOCKS[math.random(#LOCKS)],
+        collidable = false,
+        hit = false,
+        solid =true,
+        onCollide = function(obj)
+            return 
+        end
+    }
+
+    objects[rndBlock]= block
+
+    local rndBlockKey = math.random(#objects)
+
+    while objects[rndBlockKey].texture ~= 'keys_and_locks' do 
+        rndBlockKey = math.random(#objects) 
+    end
+
+    local blockKey = GameObject {
+        texture = 'keys_and_locks',
+        x = objects[rndBlockKey].x, 
+        y = objects[rndBlockKey].y,
+        width = 16,
+        height = 16,
+
+        -- make it random variant
+        frame = KEYS[math.random(#KEYS)],
+        collidable = true,
+        consumable = true,
+        solid =true,
+        
+        onConsume = function (player, object)
+            gSounds ['pickup']: play ()
+            table.remove(objects, rndBlock)
+        end
+    }
+        objects [rndBlockKey] = blockKey
+end 
