@@ -20,6 +20,8 @@ function GameObject:init(def)
     self.consumable = def.consumable
     self.onCollide = def.onCollide
     self.onConsume = def.onConsume
+    self.triggerable= def.triggerable
+    self.onTrigger = def.onTrigger
     self.hit = def.hit
 end
 
