@@ -10,7 +10,7 @@
 
 LevelMaker = Class{}
 
-function LevelMaker.generate(width, height)
+function LevelMaker.generate(width, height, state)
     local tiles = {}
     local entities = {}
     local objects = {}
@@ -22,7 +22,7 @@ function LevelMaker.generate(width, height)
     local tileset = math.random(20)
     local topperset = math.random(20)
 
-    local lockSpawned = false
+    
     -- insert blank tables into tiles for later access
     for x = 1, height do
         table.insert(tiles, {})
@@ -40,7 +40,7 @@ function LevelMaker.generate(width, height)
 
         -- chance to just be emptiness
         -- never spawn on an empty space
-        if math.random(7) == 1 and x > 1 then
+        if math.random(7) == 1 and x > 3 and x < width - 3 then
             for y = 7, height do
                 table.insert(tiles[y],
                     Tile(x, y, tileID, nil, tileset, topperset))
@@ -50,12 +50,8 @@ function LevelMaker.generate(width, height)
 
             local blockHeight = 4
 
-            for y = 7, height do
-                table.insert(tiles[y],
-                    Tile(x, y, tileID, y == 7 and topper or nil, tileset, topperset))
-            end
-
-            -- chance to generate a pillar
+            if x > 3 and x < width - 3 then
+                --chance to generate a pillar
             if math.random(8) == 1 then
                 blockHeight = 2
                 
@@ -157,6 +153,7 @@ function LevelMaker.generate(width, height)
                         end
                     }
                 )
+            end 
             end
         end
     end
@@ -164,11 +161,11 @@ function LevelMaker.generate(width, height)
     local map = TileMap(width, height)
     map.tiles = tiles
     
-    spawnLock (objects)
+    spawnLock (objects, width)
     return GameLevel(entities, objects, map)
-end
+end 
 
-function spawnLock (objects)
+function spawnLock (objects, width)
     local rndBlock = math.random(#objects)
 
     while objects [rndBlock].texture ~= 'jump-blocks' do
@@ -187,8 +184,16 @@ function spawnLock (objects)
         collidable = false,
         hit = false,
         solid =true,
-        onCollide = function(obj)
-            return 
+        onCollide = function(obj, player)
+            if player.hasKey then
+                for k, object in pairs(objects) do
+                    if object.texture == 'keys_and_locks' then 
+                        table.remove(objects, k)
+                    end
+                end 
+                player.hasKey = falses
+                spawnGoal(objects, width)
+            end 
         end
     }
 
@@ -196,7 +201,7 @@ function spawnLock (objects)
 
     local rndBlockKey = math.random(#objects)
 
-    while objects[rndBlockKey].texture ~= 'keys_and_locks' do 
+    while objects[rndBlockKey].texture == 'keys_and_locks' do 
         rndBlockKey = math.random(#objects) 
     end
 
@@ -215,8 +220,37 @@ function spawnLock (objects)
         
         onConsume = function (player, object)
             gSounds ['pickup']: play ()
-            table.remove(objects, rndBlock)
+            player.hasKey = true
         end
     }
         objects [rndBlockKey] = blockKey
+end
+
+function spawnGoal (objects, gameWidth)
+    local flag = GameObjectAnimable {
+        texture = 'flags' , 
+        x = (gameWidth - 2) * TILE_SIZE - 7,
+        y = 3 * TILE_SIZE +5 ,
+        width = 16,
+        height = 16, 
+        animationFrames = {7, 8, 9}, 
+        collidable = false,
+        consumable = false, 
+        solid = false
+    }
+
+    table.insert(objects, flag)
+
+    local post = GameObject {
+        texture = 'poles',
+        x = (gameWidth - 3) * TILE_SIZE,
+        y = 3 * TILE_SIZE,
+        width = 16, 
+        height = 16, 
+        frame = 1,
+        collidable = true,
+        consumable = false,
+        solid = false
+    }
+    table.insert(objects, post)
 end 
