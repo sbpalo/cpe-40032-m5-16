@@ -12,6 +12,7 @@ function GameObject:init(def)
     self.x = def.x
     self.y = def.y
     self.texture = def.texture
+    self.gframe = def.gframe or def.texture
     self.width = def.width
     self.height = def.height
     self.frame = def.frame
@@ -20,8 +21,6 @@ function GameObject:init(def)
     self.consumable = def.consumable
     self.onCollide = def.onCollide
     self.onConsume = def.onConsume
-    self.triggerable= def.triggerable
-    self.onTrigger = def.onTrigger
     self.hit = def.hit
 end
 
@@ -35,5 +34,5 @@ function GameObject:update(dt)
 end
 
 function GameObject:render()
-    love.graphics.draw(gTextures[self.texture], gFrames[self.texture][self.frame], self.x, self.y)
+    love.graphics.draw(gTextures[self.texture], gFrames[self.gframe][self.frame], self.x, self.y)
 end

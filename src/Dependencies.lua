@@ -37,13 +37,10 @@ require 'src/states/entity/PlayerFallingState'
 require 'src/states/entity/PlayerIdleState'
 require 'src/states/entity/PlayerJumpState'
 require 'src/states/entity/PlayerWalkingState'
-require 'src/states/entity/PlayerPausedState'
-require 'src/states/entity/PlayerAnimationState'
 
 require 'src/states/entity/snail/SnailChasingState'
 require 'src/states/entity/snail/SnailIdleState'
 require 'src/states/entity/snail/SnailMovingState'
-require 'src/Step'
 
 -- general
 require 'src/Animation'
@@ -55,7 +52,7 @@ require 'src/Player'
 require 'src/Snail'
 require 'src/Tile'
 require 'src/TileMap'
-require 'src/GameObjectAnimable'
+
 
 gSounds = {
     ['jump'] = love.audio.newSource('sounds/jump.wav'),
@@ -77,12 +74,8 @@ gTextures = {
     ['backgrounds'] = love.graphics.newImage('graphics/backgrounds.png'),
     ['green-alien'] = love.graphics.newImage('graphics/green_alien.png'),
     ['creatures'] = love.graphics.newImage('graphics/creatures.png'),
-    ['keys_and_locks'] = love.graphics.newImage('graphics/keys_and_locks.png'), 
-    ['poles'] = love.graphics.newImage('graphics/flags.png'),
-    ['flags'] = love.graphics.newImage('graphics/flags.png'),
-    ['mushroom'] = love.graphics.newImage('graphics/mushrooms.png')
-
-
+    ['keys-and-locks'] = love.graphics.newImage('graphics/keys_and_locks.png'),
+    ['flags'] = love.graphics.newImage('graphics/flags.png')
 }
 
 gFrames = {
@@ -96,9 +89,8 @@ gFrames = {
     ['backgrounds'] = GenerateQuads(gTextures['backgrounds'], 256, 128),
     ['green-alien'] = GenerateQuads(gTextures['green-alien'], 16, 20),
     ['creatures'] = GenerateQuads(gTextures['creatures'], 16, 16),
-
-    ['keys_and_locks'] = GenerateQuads(gTextures['keys_and_locks'], 16, 16),
-    ['poles'] = GenerateQuads(gTextures['poles'], 16, 48),
+    ['keys-and-locks'] = GenerateQuads(gTextures['keys-and-locks'], 16, 16),
+    ['poles'] = GenerateQuads(gTextures['flags'], 16, 48),
     ['flags'] = GenerateQuads(gTextures['flags'], 16, 16)
 }
 

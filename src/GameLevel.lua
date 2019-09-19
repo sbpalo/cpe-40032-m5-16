@@ -14,7 +14,6 @@ function GameLevel:init(entities, objects, tilemap)
     self.entities = entities
     self.objects = objects
     self.tileMap = tilemap
-    self.removedEntities = {}
 end
 
 --[[
@@ -34,7 +33,7 @@ function GameLevel:clear()
     end
 end
 
-function GameLevel:update(dt, rewinding)
+function GameLevel:update(dt)
     self.tileMap:update(dt)
 
     for k, object in pairs(self.objects) do
@@ -42,11 +41,7 @@ function GameLevel:update(dt, rewinding)
     end
 
     for k, entity in pairs(self.entities) do
-        if rewinding then
-            entity:rewind ()
-        else 
-            entity:update(dt)
-        end 
+        entity:update(dt)
     end
 end
 

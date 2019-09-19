@@ -13,12 +13,10 @@ Player = Class{__includes = Entity}
 function Player:init(def)
     Entity.init(self, def)
     self.score = 0
-    self.hasKey = false
-    self.win = false
 end
 
-function Player:update(dt, rewinding)
-    Entity.update(self, dt, rewinding)
+function Player:update(dt)
+    Entity.update(self, dt)
 end
 
 function Player:render()
@@ -77,8 +75,6 @@ function Player:checkObjectCollisions()
             elseif object.consumable then
                 object.onConsume(self)
                 table.remove(self.level.objects, k)
-            elseif object.triggerable then
-                object.onTrigger(object, self)
             end
         end
     end

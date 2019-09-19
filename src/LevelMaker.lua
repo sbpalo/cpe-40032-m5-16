@@ -10,17 +10,28 @@
 
 LevelMaker = Class{}
 
-function LevelMaker.generate(width, height, state)
+function LevelMaker.generate(width, height, level)
     local tiles = {}
     local entities = {}
     local objects = {}
 
     local tileID = TILE_ID_GROUND
 
+    width = width + math.random(level) * 2
+    
     -- whether we should draw our tiles with toppers
     local topper = true
     local tileset = math.random(20)
     local topperset = math.random(20)
+    -- 
+    local lockBlockX = math.random(width)
+    local keyX = math.random(width)
+
+    while lockBlockX == keyX do
+        keyX = math.random(width)
+    end
+
+    local blockVariant = math.random(4)
 
     -- insert blank tables into tiles for later access
     for x = 1, height do
@@ -30,7 +41,7 @@ function LevelMaker.generate(width, height, state)
     -- column by column generation instead of row; sometimes better for platformers
     for x = 1, width do
         local tileID = TILE_ID_EMPTY
-
+        
         -- lay out the empty space
         for y = 1, 6 do
             table.insert(tiles[y],
@@ -38,11 +49,10 @@ function LevelMaker.generate(width, height, state)
         end
 
         -- chance to just be emptiness
-        -- CS50: Player never spawn on a empty space
-        if math.random(7) == 1 and x > 3 and x < width - 3 then            
+        if x ~= 1 and x ~= width and x ~= width - 1 and x ~= keyX and x ~= lockBlockX and math.random(7) == 1 then
             for y = 7, height do
-                table.insert(tiles[y],
-                    Tile(x, y, tileID, nil, tileset, topperset))
+                table.insert(tiles[y], 
+                Tile(x, y, tileID, nil, tileset, topperset))
             end
         else
             tileID = TILE_ID_GROUND
@@ -54,235 +64,224 @@ function LevelMaker.generate(width, height, state)
                     Tile(x, y, tileID, y == 7 and topper or nil, tileset, topperset))
             end
 
-            if x > 3 and x < width - 3 then
-                -- chance to generate a pillar
+            -- chance to generate a pillar
+            if math.random(8) == 1 and x ~= width and x ~= width - 1 then
+                blockHeight = 2
+                
+                -- chance to generate bush on pillar
                 if math.random(8) == 1 then
-                    blockHeight = 2
-
-                    -- chance to generate bush on pillar
-                    if math.random(8) == 1 then
-                        table.insert(objects,
-                            GameObject {
-                                texture = 'bushes',
-                                x = (x - 1) * TILE_SIZE,
-                                y = (4 - 1) * TILE_SIZE,
-                                width = 16,
-                                height = 16,
-
-                                -- select random frame from bush_ids whitelist, then random row for variance
-                                frame = BUSH_IDS[math.random(#BUSH_IDS)] + (math.random(4) - 1) * 7
-                            }
-                        )
-                    end
-
-                    -- pillar tiles
-                    tiles[5][x] = Tile(x, 5, tileID, topper, tileset, topperset)
-                    tiles[6][x] = Tile(x, 6, tileID, nil, tileset, topperset)
-                    tiles[7][x].topper = nil
-
-                    -- chance to generate bushes
-                elseif math.random(8) == 1 then
-                    table.insert(objects,
-                        GameObject {
-                            texture = 'bushes',
-                            x = (x - 1) * TILE_SIZE,
-                            y = (6 - 1) * TILE_SIZE,
-                            width = 16,
-                            height = 16,
-                            frame = BUSH_IDS[math.random(#BUSH_IDS)] + (math.random(4) - 1) * 7,
-                            collidable = false
-                        }
-                    )
+                    table.insert(objects, blockMaker(x, y, blockHeight, objects))
                 end
-
-                -- chance to spawn a block
-                if math.random(10) == 1 then
-                    table.insert(objects,
-                        -- jump block
-                        GameObject {
-                            texture = 'jump-blocks',
-                            x = (x - 1) * TILE_SIZE,
-                            y = (blockHeight - 1) * TILE_SIZE,
-                            width = 16,
-                            height = 16,
-
-                            -- make it a random variant
-                            frame = math.random(#JUMP_BLOCKS),
-                            collidable = true,
-                            hit = false,
-                            solid = true,
-
-                            -- collision function takes itself
-                            onCollide = function(obj)
-
-                                -- spawn a gem if we haven't already hit the block
-                                if not obj.hit then
-
-                                    -- chance to spawn gem, not guaranteed
-                                    if math.random(5) == 1 then
-
-                                        -- maintain reference so we can set it to nil
-                                        local gem = GameObject {
-                                            texture = 'gems',
-                                            x = (x - 1) * TILE_SIZE,
-                                            y = (blockHeight - 1) * TILE_SIZE - 4,
-                                            width = 16,
-                                            height = 16,
-                                            frame = math.random(#GEMS),
-                                            collidable = true,
-                                            consumable = true,
-                                            solid = false,
-
-                                            -- gem has its own function to add to the player's score
-                                            onConsume = function(player, object)
-                                                gSounds['pickup']:play()
-                                                player.score = player.score + 100
-                                            end
-                                        }
-
-                                        -- make the gem move up from the block and play a sound
-                                        Timer.tween(0.1, {
-                                            [gem] = {y = (blockHeight - 2) * TILE_SIZE}
-                                        })
-                                        gSounds['powerup-reveal']:play()
-
-                                        table.insert(objects, gem)
-                                    end
-
-                                    obj.hit = true
-                                end
-
-                                gSounds['empty-block']:play()
-                            end
-                        }
-                    )
-                end
-
-                -- CS50: platform spawning
-                if math.random(20) == 1 then
-                end
+                
+                -- pillar tiles
+                tiles[5][x] = Tile(x, 5, tileID, topper, tileset, topperset)
+                tiles[6][x] = Tile(x, 6, tileID, nil, tileset, topperset)
+                tiles[7][x].topper = nil
+            
+            -- chance to generate bushes
+            elseif math.random(8) == 1 then
+                table.insert(objects, bushMaker(x, y, blockHeight, objects))
             end
 
+            -- chance to spawn a block
+            if x ~= lockBlockX and x ~= width - 1 and math.random(10) == 1 then
+                table.insert(objects, blockMaker(x, y, blockHeight, objects))
+            elseif x == lockBlockX then
+                table.insert(objects, lockBlockMaker(x, y, blockHeight, objects, blockVariant, width))
+            elseif x == keyX then
+                table.insert(objects, keyMaker(x, y, blockHeight, objects, blockVariant))
+            end
         end
     end
 
     local map = TileMap(width, height)
     map.tiles = tiles
-
-    spawnLock(objects, width)
-
+    
     return GameLevel(entities, objects, map)
 end
 
---CS50: spawn lock and key
-function spawnLock(objects, width)
-    local rndBlock = math.random(#objects)
 
-    while objects[rndBlock].texture ~= 'jump-blocks' do
-        rndBlock = math.random(#objects)
-    end
-
-    local block = GameObject {
-        texture = 'keys_and_locks',
-        x = objects[rndBlock].x,
-        y = objects[rndBlock].y,
+function keyMaker(x, y, blockHeight, objects, variant)
+    return GameObject {
+        texture = 'keys-and-locks',
+        x = (x - 1) * TILE_SIZE,
+        y = (blockHeight - 1) * TILE_SIZE,
         width = 16,
         height = 16,
 
         -- make it a random variant
-        frame = LOCKS[math.random(#LOCKS)],
-        collidable = false,
-        hit = false,
-        solid = true,
-        onCollide = function(obj, player)
-            if player.hasKey then
-                for k, object in pairs(objects) do
-                    if object.texture == 'keys_and_locks' then
-                        table.remove(objects, k)
-                    end
-                end
-                player.hasKey = false
-                spawnGoal(objects, width)
-            end
-        end
-    }
-
-    objects[rndBlock] = block
-
-    local rndBlockKey = math.random(#objects)
-
-    while objects[rndBlockKey].texture == 'keys_and_locks' do
-        rndBlockKey = math.random(#objects)
-    end
-
-    local blockKey = GameObject {
-        texture = 'keys_and_locks',
-        x = objects[rndBlockKey].x,
-        y = objects[rndBlockKey].y,
-        width = 16,
-        height = 16,
-
-        -- make it a random variant
-        frame = KEYS[math.random(#KEYS)],
+        frame = variant,
         collidable = true,
         consumable = true,
+        hit = false,
         solid = false,
 
-        onConsume = function(player, object)
-            gSounds['pickup']:play()
-            player.hasKey = true
+        onConsume = function()
+            print("Key ")
         end
     }
-
-    objects[rndBlockKey] = blockKey
 end
 
-
-
-function spawnGoal (objects, gameWidth)
-    local flag = GameObjectAnimable {
-        texture = 'flags',
-        x = (gameWidth - 2) * TILE_SIZE - 7,
-        y = 3 * TILE_SIZE + 5,
+function lockBlockMaker(x, y, blockHeight, objects, variant, width)
+    return GameObject {
+        texture = 'keys-and-locks',
+        x = (x - 1) * TILE_SIZE,
+        y = (blockHeight - 1) * TILE_SIZE,
         width = 16,
         height = 16,
-        animationFrames = {7, 8, 9},
-        collidable = false,
-        consumable = false,
-        solid = false
-    }
 
-    table.insert(objects, flag)
-
-    local post = GameObject {
-        texture = 'poles',
-        x = (gameWidth - 3) * TILE_SIZE,
-        y = 3 * TILE_SIZE,
-        width = 16,
-        height = 48,
-        frame = 1,
-        collidable = false,
-        consumable = false,
-        triggerable = true,
-        solid = false,
+        -- make it a random variant
+        frame = 4 + variant,
+        collidable = true,
         hit = false,
-        -- CS50: trigger callback (no consume / no collide)
-        onTrigger = function(obj)
-            if not obj.hit then
-                for k, object in pairs(objects) do
-                    if object.texture == 'flags' then
-                        obj.hit = true
-                        player:changeState('pause')
-                        Timer.tween(1, {
-                            [object] = {y = 5 * TILE_SIZE}
-                        }):finish(function()  
-                            player:changeState('animation')
-                        end)
-                    end
+        solid = true,
+
+        -- collision function takes itself
+        onCollide = function(obj)
+            local c = 0
+            local index = -1
+
+            for k, o in pairs(objects) do
+                if o == obj then
+                    index = k 
+                end
+
+                if o.texture == 'keys-and-locks' then
+                    c = c + 1
                 end
             end
+
+            if c == 1 then
+                table.remove(objects, index)
+                    
+                table.insert(objects, poleMaker(width-1))
+                table.insert(objects, flagMaker(width))
+            end
+
+            gSounds['empty-block']:play()
+
+
         end
     }
+end
 
-    table.insert(objects, post)
+function blockMaker(x, y, blockHeight, objects) 
+    -- jump block
+    return GameObject {
+        texture = 'jump-blocks',
+        x = (x - 1) * TILE_SIZE,
+        y = (blockHeight - 1) * TILE_SIZE,
+        width = 16,
+        height = 16,
+
+        -- make it a random variant
+        frame = math.random(#JUMP_BLOCKS),
+        collidable = true,
+        hit = false,
+        solid = true,
+
+        -- collision function takes itself
+        onCollide = function(obj)
+
+            -- spawn a gem if we haven't already hit the block
+            if not obj.hit then
+
+                -- chance to spawn gem, not guaranteed
+                if math.random(5) == 1 then
+
+                    -- maintain reference so we can set it to nil
+                    local gem = GameObject {
+                        texture = 'gems',
+                        x = (x - 1) * TILE_SIZE,
+                        y = (blockHeight - 1) * TILE_SIZE - 4,
+                        width = 16,
+                        height = 16,
+                        frame = math.random(#GEMS),
+                        collidable = true,
+                        consumable = true,
+                        solid = false,
+
+                        -- gem has its own function to add to the player's score
+                        onConsume = function(player, object)
+                            gSounds['pickup']:play()
+                            player.score = player.score + 100
+                        end
+                    }
+                    
+                    -- make the gem move up from the block and play a sound
+                    Timer.tween(0.1, {
+                        [gem] = {y = (blockHeight - 2) * TILE_SIZE}
+                    })
+                    gSounds['powerup-reveal']:play()
+
+                    table.insert(objects, gem)
+                end
+
+                obj.hit = true
+            end
+
+            gSounds['empty-block']:play()
+        end
+    }
+end
+
+function bushOnPillarMaker(x, y) 
+    return GameObject {
+        texture = 'bushes',
+        x = (x - 1) * TILE_SIZE,
+        y = (4 - 1) * TILE_SIZE,
+        width = 16,
+        height = 16,
+        
+        -- select random frame from bush_ids whitelist, then random row for variance
+        frame = BUSH_IDS[math.random(#BUSH_IDS)] + (math.random(4) - 1) * 7
+    }
+end
+
+function bushMaker(x, y)
+    return GameObject {
+        texture = 'bushes',
+        x = (x - 1) * TILE_SIZE,
+        y = (6 - 1) * TILE_SIZE,
+        width = 16,
+        height = 16,
+        frame = BUSH_IDS[math.random(#BUSH_IDS)] + (math.random(4) - 1) * 7,
+        collidable = false
+    }
+end
+
+function poleMaker(x)
+    local variant = math.random(6)
+    return GameObject {
+        texture = 'flags',
+        gframe = 'poles',
+        x = (x - 1) * TILE_SIZE,
+        y = 3 * TILE_SIZE,
+        width = 16,
+        height = 16,
+        frame = variant,
+        collidable = false
+    }
+end
+
+function flagMaker(x)
+    local variant = math.random(4)
+    print(variant)
+    return GameObject {
+        texture = 'flags',
+        gframe = 'flags',
+        x = (x - 3/2) * TILE_SIZE,
+        y = 3 * TILE_SIZE,
+        width = 16,
+        height = 16,
+        frame = 9*variant - 2,
+        collidable = true,
+        consumable = true,
+        hit = false,
+        solid = false,
+        onConsume = function(obj)
+            levelCompleted = true
+            print("level completed")
+        end
+    }
 end
