@@ -37,10 +37,13 @@ require 'src/states/entity/PlayerFallingState'
 require 'src/states/entity/PlayerIdleState'
 require 'src/states/entity/PlayerJumpState'
 require 'src/states/entity/PlayerWalkingState'
+require 'src/states/entity/PlayerPausedState'
+require 'src/states/entity/PlayerAnimationState'
 
 require 'src/states/entity/snail/SnailChasingState'
 require 'src/states/entity/snail/SnailIdleState'
 require 'src/states/entity/snail/SnailMovingState'
+require 'src/Step'
 
 -- general
 require 'src/Animation'
@@ -76,7 +79,8 @@ gTextures = {
     ['creatures'] = love.graphics.newImage('graphics/creatures.png'),
     ['keys_and_locks'] = love.graphics.newImage('graphics/keys_and_locks.png'), 
     ['poles'] = love.graphics.newImage('graphics/flags.png'),
-    ['flags'] = love.graphics.newImage('graphics/flags.png')
+    ['flags'] = love.graphics.newImage('graphics/flags.png'),
+    ['mushroom'] = love.graphics.newImage('graphics/mushrooms.png')
 
 
 }
