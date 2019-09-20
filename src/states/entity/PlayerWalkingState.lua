@@ -11,7 +11,7 @@ PlayerWalkingState = Class{__includes = BaseState}
 function PlayerWalkingState:init(player)
     self.player = player
     self.animation = Animation {
-        frames = {10, 11},
+        frames = {4, 5, 6},
         interval = 0.1
     }
     self.player.currentAnimation = self.animation
